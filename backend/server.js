@@ -436,6 +436,140 @@ app.get(
 
 
 // =================================
+// UPDATE BLOG
+// =================================
+
+app.put("/api/blogs/:id", async (req, res) => {
+
+    try {
+
+        const {
+            title,
+            category,
+            content
+        } = req.body;
+
+
+        if (!title || !category || !content) {
+
+            return res.status(400).json({
+
+                message:
+                    "Title, category and content are required."
+
+            });
+
+        }
+
+
+        const updatedBlog =
+            await Blog.findByIdAndUpdate(
+
+                req.params.id,
+
+                {
+                    title,
+                    category,
+                    content
+                },
+
+                {
+                    new: true,
+                    runValidators: true
+                }
+
+            );
+
+
+        if (!updatedBlog) {
+
+            return res.status(404).json({
+
+                message:
+                    "Blog not found."
+
+            });
+
+        }
+
+
+        res.json({
+
+            message:
+                "Blog updated successfully.",
+
+            blog:
+                updatedBlog
+
+        });
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            message:
+                "Unable to update blog."
+
+        });
+
+    }
+
+});
+
+// =================================
+// DELETE BLOG
+// =================================
+
+app.delete("/api/blogs/:id", async (req, res) => {
+
+    try {
+
+        const deletedBlog =
+            await Blog.findByIdAndDelete(
+                req.params.id
+            );
+
+
+        if (!deletedBlog) {
+
+            return res.status(404).json({
+
+                message:
+                    "Blog not found."
+
+            });
+
+        }
+
+
+        res.json({
+
+            message:
+                "Blog deleted successfully."
+
+        });
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            message:
+                "Unable to delete blog."
+
+        });
+
+    }
+
+});
+
+
+// =================================
 // START SERVER
 // =================================
 

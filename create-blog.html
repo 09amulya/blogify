@@ -1,163 +1,81 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8" />
 
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Create Blog - Blogify</title>
 
-    <link rel="stylesheet" href="style.css">
-
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
+    <header class="navbar">
+        <div class="logo">Blogify</div>
 
-<header class="navbar">
+        <nav>
+            <a href="index.html"> Home </a>
 
-    <div class="logo">
-        Blogify
-    </div>
+            <a href="dashboard.html"> Dashboard </a>
+        </nav>
+    </header>
 
-    <nav>
+    <main class="create-page">
+        <div class="create-container">
+            <div class="section-heading left">
+                <span class="small-heading"> CREATE </span>
 
-        <a href="index.html">
-            Home
-        </a>
+                <h1 id="formTitle">Write Your Story</h1>
 
-        <a href="dashboard.html">
-            Dashboard
-        </a>
+                <p>Share your thoughts with the Blogify community.</p>
+            </div>
 
-    </nav>
+            <form id="blogForm" class="blog-form">
+                <div class="input-group">
+                    <label for="title"> Blog Title </label>
 
-</header>
+                    <input type="text" id="title" placeholder="Enter an interesting title" required />
+                </div>
 
+                <div class="input-group">
+                    <label for="category"> Category </label>
 
-<main class="create-page">
+                    <select id="category" required>
+                        <option value="">Select a category</option>
 
-    <div class="create-container">
+                        <option value="Technology">Technology</option>
 
-        <div class="section-heading left">
+                        <option value="Programming">Programming</option>
 
-            <span class="small-heading">
-                CREATE
-            </span>
+                        <option value="Education">Education</option>
 
-            <h1>
-                Write Your Story
-            </h1>
+                        <option value="Lifestyle">Lifestyle</option>
 
-            <p>
-                Share your thoughts with the Blogify community.
-            </p>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
 
+                <div class="input-group">
+                    <label for="content"> Blog Content </label>
+
+                    <textarea id="content" rows="12" placeholder="Start writing your story..." required>
+            </textarea>
+                </div>
+
+                <div class="form-actions">
+                    <a href="dashboard.html" class="cancel-btn"> Cancel </a>
+
+                    <button type="submit" class="full-btn" id="submitBlogBtn">
+                        Publish Blog
+                    </button>
+                </div>
+            </form>
         </div>
+    </main>
 
-
-        <form id="blogForm" class="blog-form">
-
-            <div class="input-group">
-
-                <label for="title">
-                    Blog Title
-                </label>
-
-                <input
-                    type="text"
-                    id="title"
-                    placeholder="Enter an interesting title"
-                    required
-                >
-
-            </div>
-
-
-            <div class="input-group">
-
-                <label for="category">
-                    Category
-                </label>
-
-                <select id="category" required>
-
-                    <option value="">
-                        Select a category
-                    </option>
-
-                    <option value="Technology">
-                        Technology
-                    </option>
-
-                    <option value="Programming">
-                        Programming
-                    </option>
-
-                    <option value="Education">
-                        Education
-                    </option>
-
-                    <option value="Lifestyle">
-                        Lifestyle
-                    </option>
-
-                    <option value="Other">
-                        Other
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <div class="input-group">
-
-                <label for="content">
-                    Blog Content
-                </label>
-
-                <textarea
-                    id="content"
-                    rows="12"
-                    placeholder="Start writing your story..."
-                    required>
-                </textarea>
-
-            </div>
-
-
-            <div class="form-actions">
-
-                <a
-                    href="dashboard.html"
-                    class="cancel-btn">
-
-                    Cancel
-
-                </a>
-
-                <button
-                    type="submit"
-                    class="full-btn">
-
-                    Publish Blog
-
-                </button>
-
-            </div>
-
-        </form>
-
-    </div>
-
-</main>
-
-
-<script src="script.js"></script>
-
+    <script src="script.js"></script>
 </body>
+
 </html>

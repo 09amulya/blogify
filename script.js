@@ -350,15 +350,72 @@ if (dashboardLogout) {
 }
 
 
-/* =====================================
-   CREATE BLOG
-===================================== */
+// =================================
+// CREATE / UPDATE BLOG
+// =================================
 
 const blogForm =
-    document.getElementById("blogForm");
+    document.getElementById(
+        "blogForm"
+    );
 
 
 if (blogForm) {
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+
+    const blogId =
+        params.get("id");
+
+
+    const formTitle =
+        document.getElementById(
+            "formTitle"
+        );
+
+
+    const submitButton =
+        document.getElementById(
+            "submitBlogBtn"
+        );
+
+
+    // =========================
+    // EDIT MODE
+    // =========================
+
+    if (blogId) {
+
+        if (formTitle) {
+
+            formTitle.textContent =
+                "Edit Your Blog";
+
+        }
+
+
+        if (submitButton) {
+
+            submitButton.textContent =
+                "Update Blog";
+
+        }
+
+
+        loadBlogForEditing(
+            blogId
+        );
+
+    }
+
+
+    // =========================
+    // FORM SUBMIT
+    // =========================
 
     blogForm.addEventListener(
         "submit",
@@ -387,51 +444,99 @@ if (blogForm) {
                     .trim();
 
 
-            const currentUser =
-                JSON.parse(
-                    localStorage.getItem(
-                        "currentUser"
-                    )
-                );
-
-
-            const author =
-                currentUser
-                    ? currentUser.name
-                    : "Anonymous";
-
-
             try {
 
-                const response =
-                    await fetch(
-                        "http://localhost:5000/api/blogs",
-                        {
+                let response;
 
-                            method: "POST",
 
-                            headers: {
+                // =========================
+                // UPDATE
+                // =========================
 
-                                "Content-Type":
-                                    "application/json"
+                if (blogId) {
 
-                            },
+                    response =
+                        await fetch(
+                            `http://localhost:5000/api/blogs/${blogId}`,
+                            {
 
-                            body:
-                                JSON.stringify({
+                                method: "PUT",
 
-                                    title,
+                                headers: {
 
-                                    category,
+                                    "Content-Type":
+                                        "application/json"
 
-                                    content,
+                                },
 
-                                    author
+                                body:
+                                    JSON.stringify({
 
-                                })
+                                        title,
 
-                        }
-                    );
+                                        category,
+
+                                        content
+
+                                    })
+
+                            }
+                        );
+
+                }
+
+
+                // =========================
+                // CREATE
+                // =========================
+
+                else {
+
+                    const currentUser =
+                        JSON.parse(
+                            localStorage.getItem(
+                                "currentUser"
+                            )
+                        );
+
+
+                    const author =
+                        currentUser
+                            ? currentUser.name
+                            : "Anonymous";
+
+
+                    response =
+                        await fetch(
+                            "http://localhost:5000/api/blogs",
+                            {
+
+                                method: "POST",
+
+                                headers: {
+
+                                    "Content-Type":
+                                        "application/json"
+
+                                },
+
+                                body:
+                                    JSON.stringify({
+
+                                        title,
+
+                                        category,
+
+                                        content,
+
+                                        author
+
+                                    })
+
+                            }
+                        );
+
+                }
 
 
                 const data =
@@ -449,9 +554,19 @@ if (blogForm) {
                 }
 
 
-                alert(
-                    "Blog published successfully!"
-                );
+                if (blogId) {
+
+                    alert(
+                        "Blog updated successfully!"
+                    );
+
+                } else {
+
+                    alert(
+                        "Blog published successfully!"
+                    );
+
+                }
 
 
                 window.location.href =
@@ -473,6 +588,65 @@ if (blogForm) {
 
 }
 
+
+// =================================
+// LOAD BLOG FOR EDITING
+// =================================
+
+async function loadBlogForEditing(blogId) {
+
+    try {
+
+        const response =
+            await fetch(
+                `http://localhost:5000/api/blogs/${blogId}`
+            );
+
+
+        const blog =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            alert(
+                blog.message
+            );
+
+            return;
+
+        }
+
+
+        document.getElementById(
+            "title"
+        ).value =
+            blog.title;
+
+
+        document.getElementById(
+            "category"
+        ).value =
+            blog.category;
+
+
+        document.getElementById(
+            "content"
+        ).value =
+            blog.content;
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to load blog."
+        );
+
+    }
+
+}
 
 /* =====================================
    DISPLAY BLOGS ON HOME PAGE
@@ -636,6 +810,7 @@ displayHomeBlogs();
    DASHBOARD
 ===================================== */
 
+
 async function loadDashboard() {
 
     const dashboardContainer =
@@ -658,6 +833,8 @@ async function loadDashboard() {
             )
         );
 
+
+    // Display user name
 
     if (currentUser) {
 
@@ -688,6 +865,19 @@ async function loadDashboard() {
         const blogs =
             await response.json();
 
+
+        if (!response.ok) {
+
+            throw new Error(
+                blogs.message
+            );
+
+        }
+
+
+        // =========================
+        // STATISTICS
+        // =========================
 
         const postCount =
             document.getElementById(
@@ -737,6 +927,10 @@ async function loadDashboard() {
             totalLikes;
 
 
+        // =========================
+        // DISPLAY BLOGS
+        // =========================
+
         dashboardContainer.innerHTML =
             "";
 
@@ -774,7 +968,7 @@ async function loadDashboard() {
 
 
                 card.className =
-                    "blog-card";
+                    "blog-card dashboard-card";
 
 
                 card.innerHTML = `
@@ -818,13 +1012,31 @@ async function loadDashboard() {
 
                         ·
 
-                        ${blog.views}
-                        views
+                        ${new Date(
+                            blog.createdAt
+                        ).toLocaleDateString()}
 
-                        ·
+                    </div>
 
-                        ${blog.likes}
-                        likes
+
+                    <div class="blog-actions">
+
+                        <button
+                            class="edit-btn"
+                            onclick="editBlog('${blog._id}')">
+
+                            ✏️ Edit
+
+                        </button>
+
+
+                        <button
+                            class="delete-btn"
+                            onclick="deleteBlog('${blog._id}')">
+
+                            🗑️ Delete
+
+                        </button>
 
                     </div>
 
@@ -848,11 +1060,11 @@ async function loadDashboard() {
             <div class="empty-message">
 
                 <h3>
-                    Unable to load dashboard
+                    Unable to load blogs
                 </h3>
 
                 <p>
-                    Make sure the backend
+                    Make sure your backend
                     server is running.
                 </p>
 
@@ -865,8 +1077,83 @@ async function loadDashboard() {
 }
 
 
-loadDashboard();
+// =================================
+// DELETE BLOG
+// =================================
 
+async function deleteBlog(blogId) {
+
+    const confirmDelete =
+        confirm(
+            "Are you sure you want to delete this blog?"
+        );
+
+
+    if (!confirmDelete) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `http://localhost:5000/api/blogs/${blogId}`,
+                {
+
+                    method: "DELETE"
+
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            alert(
+                data.message
+            );
+
+            return;
+
+        }
+
+
+        alert(
+            "Blog deleted successfully."
+        );
+
+
+        loadDashboard();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to delete blog."
+        );
+
+    }
+
+}
+
+// =================================
+// EDIT BLOG
+// =================================
+
+function editBlog(blogId) {
+
+    window.location.href =
+        `create-blog.html?id=${blogId}`;
+
+}
 
 /* =====================================
    SECURITY HELPER
