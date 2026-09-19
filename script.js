@@ -100,64 +100,98 @@ if (registerForm) {
 
     registerForm.addEventListener(
         "submit",
-        function (event) {
+        async function (event) {
 
             event.preventDefault();
 
 
             const name =
-                document.getElementById("name").value.trim();
+                document
+                    .getElementById("name")
+                    .value
+                    .trim();
 
 
             const email =
-                document.getElementById("email").value.trim();
+                document
+                    .getElementById("email")
+                    .value
+                    .trim();
 
 
             const password =
-                document.getElementById("password").value;
+                document
+                    .getElementById("password")
+                    .value;
 
 
-            if (password.length < 6) {
+            try {
+
+                const response =
+                    await fetch(
+                        "http://localhost:5000/api/register",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify({
+
+                                    name,
+                                    email,
+                                    password
+
+                                })
+
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    alert(
+                        data.message
+                    );
+
+                    return;
+
+                }
+
 
                 alert(
-                    "Password must contain at least 6 characters."
+                    "Registration successful!"
                 );
 
-                return;
+
+                window.location.href =
+                    "login.html";
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Unable to connect to server."
+                );
 
             }
-
-
-            const user = {
-
-                name: name,
-
-                email: email,
-
-                password: password
-
-            };
-
-
-            localStorage.setItem(
-                "user",
-                JSON.stringify(user)
-            );
-
-
-            alert(
-                "Registration successful! Please login."
-            );
-
-
-            window.location.href =
-                "login.html";
 
         }
     );
 
 }
-
 
 /* =====================================
    LOGIN
@@ -171,7 +205,7 @@ if (loginForm) {
 
     loginForm.addEventListener(
         "submit",
-        function (event) {
+        async function (event) {
 
             event.preventDefault();
 
@@ -189,31 +223,61 @@ if (loginForm) {
                     .value;
 
 
-            const storedUser =
-                JSON.parse(
-                    localStorage.getItem("user")
-                );
+            try {
+
+                const response =
+                    await fetch(
+                        "http://localhost:5000/api/login",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify({
+
+                                    email,
+                                    password
+
+                                })
+
+                        }
+                    );
 
 
-            if (!storedUser) {
-
-                alert(
-                    "No account found. Please register first."
-                );
-
-                return;
-
-            }
+                const data =
+                    await response.json();
 
 
-            if (
-                storedUser.email === email &&
-                storedUser.password === password
-            ) {
+                if (!response.ok) {
 
+                    alert(
+                        data.message
+                    );
+
+                    return;
+
+                }
+
+
+                // Save logged-in user
                 localStorage.setItem(
                     "loggedIn",
                     "true"
+                );
+
+
+                localStorage.setItem(
+                    "currentUser",
+                    JSON.stringify(
+                        data.user
+                    )
                 );
 
 
@@ -225,10 +289,13 @@ if (loginForm) {
                 window.location.href =
                     "dashboard.html";
 
-            } else {
+
+            } catch (error) {
+
+                console.error(error);
 
                 alert(
-                    "Invalid email or password."
+                    "Unable to connect to server."
                 );
 
             }
@@ -295,7 +362,7 @@ if (blogForm) {
 
     blogForm.addEventListener(
         "submit",
-        function (event) {
+        async function (event) {
 
             event.preventDefault();
 
@@ -320,65 +387,86 @@ if (blogForm) {
                     .trim();
 
 
-            const user =
+            const currentUser =
                 JSON.parse(
-                    localStorage.getItem("user")
+                    localStorage.getItem(
+                        "currentUser"
+                    )
                 );
 
 
-            let author = "Anonymous";
+            const author =
+                currentUser
+                    ? currentUser.name
+                    : "Anonymous";
 
 
-            if (user) {
+            try {
 
-                author = user.name;
+                const response =
+                    await fetch(
+                        "http://localhost:5000/api/blogs",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify({
+
+                                    title,
+
+                                    category,
+
+                                    content,
+
+                                    author
+
+                                })
+
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    alert(
+                        data.message
+                    );
+
+                    return;
+
+                }
+
+
+                alert(
+                    "Blog published successfully!"
+                );
+
+
+                window.location.href =
+                    "dashboard.html";
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "Unable to connect to server."
+                );
 
             }
-
-
-            const newBlog = {
-
-                title: title,
-
-                category: category,
-
-                content: content,
-
-                author: author,
-
-                date:
-                    new Date()
-                        .toLocaleDateString(),
-
-                views: 0,
-
-                likes: 0
-
-            };
-
-
-            let blogs =
-                JSON.parse(
-                    localStorage.getItem("blogs")
-                ) || [];
-
-
-            blogs.unshift(newBlog);
-
-
-            localStorage.setItem(
-                "blogs",
-                JSON.stringify(blogs)
-            );
-
-
-            alert(
-                "Your blog has been published!"
-            );
-
-
-            window.location.href =
-                "dashboard.html";
 
         }
     );
@@ -390,7 +478,7 @@ if (blogForm) {
    DISPLAY BLOGS ON HOME PAGE
 ===================================== */
 
-function displayHomeBlogs() {
+async function displayHomeBlogs() {
 
     const container =
         document.getElementById(
@@ -405,70 +493,138 @@ function displayHomeBlogs() {
     }
 
 
-    const blogs =
-        JSON.parse(
-            localStorage.getItem("blogs")
-        ) || [];
+    try {
+
+        const response =
+            await fetch(
+                "http://localhost:5000/api/blogs"
+            );
 
 
-    container.innerHTML = "";
+        const blogs =
+            await response.json();
 
 
-    if (blogs.length === 0) {
-
-        container.innerHTML = `
-            <div class="empty-message">
-                <h3>No blogs yet</h3>
-                <p>Be the first person to publish a blog.</p>
-            </div>
-        `;
-
-        return;
-
-    }
+        container.innerHTML = "";
 
 
-    blogs.forEach(
-        function (blog) {
+        if (blogs.length === 0) {
 
-            const card =
-                document.createElement(
-                    "article"
-                );
+            container.innerHTML = `
 
+                <div class="empty-message">
 
-            card.className =
-                "blog-card";
+                    <h3>
+                        No blogs yet
+                    </h3>
 
+                    <p>
+                        Be the first person
+                        to publish a blog.
+                    </p>
 
-            card.innerHTML = `
-
-                <span class="blog-category">
-                    ${escapeHTML(blog.category)}
-                </span>
-
-                <h3>
-                    ${escapeHTML(blog.title)}
-                </h3>
-
-                <p>
-                    ${escapeHTML(
-                        blog.content.substring(0, 120)
-                    )}...
-                </p>
-
-                <div class="blog-meta">
-                    By ${escapeHTML(blog.author)}
-                    · ${escapeHTML(blog.date)}
                 </div>
 
             `;
 
-
-            container.appendChild(card);
+            return;
 
         }
-    );
+
+
+        blogs.forEach(
+            function (blog) {
+
+                const card =
+                    document.createElement(
+                        "article"
+                    );
+
+
+                card.className =
+                    "blog-card";
+
+
+                card.innerHTML = `
+
+                    <span class="blog-category">
+
+                        ${escapeHTML(
+                            blog.category
+                        )}
+
+                    </span>
+
+
+                    <h3>
+
+                        ${escapeHTML(
+                            blog.title
+                        )}
+
+                    </h3>
+
+
+                    <p>
+
+                        ${escapeHTML(
+                            blog.content.substring(
+                                0,
+                                120
+                            )
+                        )}...
+
+                    </p>
+
+
+                    <div class="blog-meta">
+
+                        By
+                        ${escapeHTML(
+                            blog.author
+                        )}
+
+                        ·
+
+                        ${escapeHTML(
+                            blog.date
+                        )}
+
+                    </div>
+
+                `;
+
+
+                container.appendChild(
+                    card
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        container.innerHTML = `
+
+            <div class="empty-message">
+
+                <h3>
+                    Unable to load blogs
+                </h3>
+
+                <p>
+                    Please make sure the backend
+                    server is running.
+                </p>
+
+            </div>
+
+        `;
+
+    }
 
 }
 
@@ -480,7 +636,7 @@ displayHomeBlogs();
    DASHBOARD
 ===================================== */
 
-function loadDashboard() {
+async function loadDashboard() {
 
     const dashboardContainer =
         document.getElementById(
@@ -495,13 +651,15 @@ function loadDashboard() {
     }
 
 
-    const user =
+    const currentUser =
         JSON.parse(
-            localStorage.getItem("user")
+            localStorage.getItem(
+                "currentUser"
+            )
         );
 
 
-    if (user) {
+    if (currentUser) {
 
         const userName =
             document.getElementById(
@@ -512,151 +670,197 @@ function loadDashboard() {
         if (userName) {
 
             userName.textContent =
-                user.name;
+                currentUser.name;
 
         }
 
     }
 
 
-    const blogs =
-        JSON.parse(
-            localStorage.getItem("blogs")
-        ) || [];
+    try {
+
+        const response =
+            await fetch(
+                "http://localhost:5000/api/blogs"
+            );
 
 
-    const postCount =
-        document.getElementById(
-            "postCount"
-        );
+        const blogs =
+            await response.json();
 
 
-    const viewCount =
-        document.getElementById(
-            "viewCount"
-        );
+        const postCount =
+            document.getElementById(
+                "postCount"
+            );
 
 
-    const likeCount =
-        document.getElementById(
-            "likeCount"
-        );
+        const viewCount =
+            document.getElementById(
+                "viewCount"
+            );
 
 
-    if (postCount) {
+        const likeCount =
+            document.getElementById(
+                "likeCount"
+            );
+
 
         postCount.textContent =
             blogs.length;
 
-    }
+
+        let totalViews = 0;
+
+        let totalLikes = 0;
 
 
-    let totalViews = 0;
+        blogs.forEach(
+            function (blog) {
 
-    let totalLikes = 0;
+                totalViews +=
+                    Number(blog.views) || 0;
 
+                totalLikes +=
+                    Number(blog.likes) || 0;
 
-    blogs.forEach(
-        function (blog) {
+            }
+        );
 
-            totalViews +=
-                Number(blog.views) || 0;
-
-
-            totalLikes +=
-                Number(blog.likes) || 0;
-
-        }
-    );
-
-
-    if (viewCount) {
 
         viewCount.textContent =
             totalViews;
 
-    }
-
-
-    if (likeCount) {
 
         likeCount.textContent =
             totalLikes;
 
-    }
+
+        dashboardContainer.innerHTML =
+            "";
 
 
-    dashboardContainer.innerHTML = "";
+        if (blogs.length === 0) {
+
+            dashboardContainer.innerHTML = `
+
+                <div class="empty-message">
+
+                    <h3>
+                        No blogs yet
+                    </h3>
+
+                    <p>
+                        Start writing your first blog.
+                    </p>
+
+                </div>
+
+            `;
+
+            return;
+
+        }
 
 
-    if (blogs.length === 0) {
+        blogs.forEach(
+            function (blog) {
+
+                const card =
+                    document.createElement(
+                        "article"
+                    );
+
+
+                card.className =
+                    "blog-card";
+
+
+                card.innerHTML = `
+
+                    <span class="blog-category">
+
+                        ${escapeHTML(
+                            blog.category
+                        )}
+
+                    </span>
+
+
+                    <h3>
+
+                        ${escapeHTML(
+                            blog.title
+                        )}
+
+                    </h3>
+
+
+                    <p>
+
+                        ${escapeHTML(
+                            blog.content.substring(
+                                0,
+                                120
+                            )
+                        )}...
+
+                    </p>
+
+
+                    <div class="blog-meta">
+
+                        By
+                        ${escapeHTML(
+                            blog.author
+                        )}
+
+                        ·
+
+                        ${blog.views}
+                        views
+
+                        ·
+
+                        ${blog.likes}
+                        likes
+
+                    </div>
+
+                `;
+
+
+                dashboardContainer.appendChild(
+                    card
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
 
         dashboardContainer.innerHTML = `
 
             <div class="empty-message">
 
                 <h3>
-                    You haven't created any blogs yet.
+                    Unable to load dashboard
                 </h3>
 
                 <p>
-                    Start writing your first blog.
+                    Make sure the backend
+                    server is running.
                 </p>
 
             </div>
 
         `;
 
-        return;
-
     }
-
-
-    blogs.forEach(
-        function (blog) {
-
-            const card =
-                document.createElement(
-                    "article"
-                );
-
-
-            card.className =
-                "blog-card";
-
-
-            card.innerHTML = `
-
-                <span class="blog-category">
-                    ${escapeHTML(blog.category)}
-                </span>
-
-                <h3>
-                    ${escapeHTML(blog.title)}
-                </h3>
-
-                <p>
-                    ${escapeHTML(blog.content.substring(0, 120))}
-                    ...
-                </p>
-
-                <div class="blog-meta">
-
-                    ${escapeHTML(blog.date)}
-                    · ${blog.views} views
-                    · ${blog.likes} likes
-
-                </div>
-
-            `;
-
-
-            dashboardContainer.appendChild(
-                card
-            );
-
-        }
-    );
 
 }
 
