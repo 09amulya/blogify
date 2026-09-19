@@ -1,62 +1,50 @@
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+require("dotenv").config();
+
+const User = require("./models/User");
+const Blog = require("./models/Blog");
 
 const app = express();
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 
-// ==============================
+// =================================
 // MIDDLEWARE
-// ==============================
+// =================================
 
 app.use(cors());
 
 app.use(express.json());
 
 
-// ==============================
-// DATABASE FILE
-// ==============================
+// =================================
+// CONNECT TO MONGODB
+// =================================
 
-const dbPath = path.join(
-    __dirname,
-    "data",
-    "db.json"
-);
+mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
 
+        console.log("MongoDB connected successfully.");
 
-// ==============================
-// DATABASE FUNCTIONS
-// ==============================
+    })
+    .catch((error) => {
 
-function readDatabase() {
-
-    const data =
-        fs.readFileSync(
-            dbPath,
-            "utf-8"
+        console.error(
+            "MongoDB connection failed:",
+            error.message
         );
 
-    return JSON.parse(data);
-}
+    });
 
 
-function writeDatabase(data) {
-
-    fs.writeFileSync(
-        dbPath,
-        JSON.stringify(data, null, 4)
-    );
-
-}
-
-
-// ==============================
+// =================================
 // HOME ROUTE
-// ==============================
+// =================================
 
 app.get("/", (req, res) => {
 
@@ -67,11 +55,11 @@ app.get("/", (req, res) => {
 });
 
 
-// ==============================
+// =================================
 // REGISTER USER
-// ==============================
+// =================================
 
-app.post("/api/register", (req, res) => {
+app.post("/api/register", async (req, res) => {
 
     try {
 
@@ -82,8 +70,6 @@ app.post("/api/register", (req, res) => {
         } = req.body;
 
 
-        // Check missing fields
-
         if (
             !name ||
             !email ||
@@ -93,24 +79,31 @@ app.post("/api/register", (req, res) => {
             return res.status(400).json({
 
                 message:
-                    "Please provide name, email and password."
+                    "Name, email and password are required."
 
             });
 
         }
 
 
-        const db =
-            readDatabase();
+        if (password.length < 6) {
+
+            return res.status(400).json({
+
+                message:
+                    "Password must contain at least 6 characters."
+
+            });
+
+        }
 
 
         // Check existing user
 
         const existingUser =
-            db.users.find(
-                user =>
-                    user.email === email
-            );
+            await User.findOne({
+                email
+            });
 
 
         if (existingUser) {
@@ -125,28 +118,28 @@ app.post("/api/register", (req, res) => {
         }
 
 
+        // Hash password
+
+        const hashedPassword =
+            await bcrypt.hash(
+                password,
+                10
+            );
+
+
         // Create user
 
-        const newUser = {
+        const user =
+            await User.create({
 
-            id:
-                Date.now(),
+                name,
 
-            name,
+                email,
 
-            email,
+                password:
+                    hashedPassword
 
-            password
-
-        };
-
-
-        db.users.push(
-            newUser
-        );
-
-
-        writeDatabase(db);
+            });
 
 
         res.status(201).json({
@@ -156,94 +149,7 @@ app.post("/api/register", (req, res) => {
 
             user: {
 
-                id: newUser.id,
-
-                name: newUser.name,
-
-                email: newUser.email
-
-            }
-
-        });
-
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-
-            message:
-                "Server error."
-
-        });
-
-    }
-
-});
-
-
-// ==============================
-// LOGIN USER
-// ==============================
-
-app.post("/api/login", (req, res) => {
-
-    try {
-
-        const {
-            email,
-            password
-        } = req.body;
-
-
-        if (
-            !email ||
-            !password
-        ) {
-
-            return res.status(400).json({
-
-                message:
-                    "Email and password are required."
-
-            });
-
-        }
-
-
-        const db =
-            readDatabase();
-
-
-        const user =
-            db.users.find(
-                user =>
-                    user.email === email &&
-                    user.password === password
-            );
-
-
-        if (!user) {
-
-            return res.status(401).json({
-
-                message:
-                    "Invalid email or password."
-
-            });
-
-        }
-
-
-        res.json({
-
-            message:
-                "Login successful.",
-
-            user: {
-
-                id: user.id,
+                id: user._id,
 
                 name: user.name,
 
@@ -270,11 +176,115 @@ app.post("/api/login", (req, res) => {
 });
 
 
-// ==============================
-// CREATE BLOG
-// ==============================
+// =================================
+// LOGIN USER
+// =================================
 
-app.post("/api/blogs", (req, res) => {
+app.post("/api/login", async (req, res) => {
+
+    try {
+
+        const {
+            email,
+            password
+        } = req.body;
+
+
+        if (
+            !email ||
+            !password
+        ) {
+
+            return res.status(400).json({
+
+                message:
+                    "Email and password are required."
+
+            });
+
+        }
+
+
+        // Find user
+
+        const user =
+            await User.findOne({
+                email
+            });
+
+
+        if (!user) {
+
+            return res.status(401).json({
+
+                message:
+                    "Invalid email or password."
+
+            });
+
+        }
+
+
+        // Compare password
+
+        const passwordMatch =
+            await bcrypt.compare(
+                password,
+                user.password
+            );
+
+
+        if (!passwordMatch) {
+
+            return res.status(401).json({
+
+                message:
+                    "Invalid email or password."
+
+            });
+
+        }
+
+
+        res.json({
+
+            message:
+                "Login successful.",
+
+            user: {
+
+                id: user._id,
+
+                name: user.name,
+
+                email: user.email
+
+            }
+
+        });
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            message:
+                "Server error."
+
+        });
+
+    }
+
+});
+
+
+// =================================
+// CREATE BLOG
+// =================================
+
+app.post("/api/blogs", async (req, res) => {
 
     try {
 
@@ -302,41 +312,19 @@ app.post("/api/blogs", (req, res) => {
         }
 
 
-        const db =
-            readDatabase();
+        const blog =
+            await Blog.create({
 
+                title,
 
-        const newBlog = {
+                category,
 
-            id:
-                Date.now(),
+                content,
 
-            title,
+                author:
+                    author || "Anonymous"
 
-            category,
-
-            content,
-
-            author:
-                author || "Anonymous",
-
-            date:
-                new Date()
-                    .toLocaleDateString(),
-
-            views: 0,
-
-            likes: 0
-
-        };
-
-
-        db.blogs.unshift(
-            newBlog
-        );
-
-
-        writeDatabase(db);
+            });
 
 
         res.status(201).json({
@@ -344,8 +332,7 @@ app.post("/api/blogs", (req, res) => {
             message:
                 "Blog created successfully.",
 
-            blog:
-                newBlog
+            blog
 
         });
 
@@ -357,7 +344,7 @@ app.post("/api/blogs", (req, res) => {
         res.status(500).json({
 
             message:
-                "Server error."
+                "Unable to create blog."
 
         });
 
@@ -366,21 +353,22 @@ app.post("/api/blogs", (req, res) => {
 });
 
 
-// ==============================
+// =================================
 // GET ALL BLOGS
-// ==============================
+// =================================
 
-app.get("/api/blogs", (req, res) => {
+app.get("/api/blogs", async (req, res) => {
 
     try {
 
-        const db =
-            readDatabase();
+        const blogs =
+            await Blog.find()
+                .sort({
+                    createdAt: -1
+                });
 
 
-        res.json(
-            db.blogs
-        );
+        res.json(blogs);
 
 
     } catch (error) {
@@ -399,25 +387,19 @@ app.get("/api/blogs", (req, res) => {
 });
 
 
-// ==============================
+// =================================
 // GET SINGLE BLOG
-// ==============================
+// =================================
 
 app.get(
     "/api/blogs/:id",
-    (req, res) => {
+    async (req, res) => {
 
         try {
 
-            const db =
-                readDatabase();
-
-
             const blog =
-                db.blogs.find(
-                    blog =>
-                        blog.id ==
-                        req.params.id
+                await Blog.findById(
+                    req.params.id
                 );
 
 
@@ -443,7 +425,7 @@ app.get(
             res.status(500).json({
 
                 message:
-                    "Server error."
+                    "Unable to fetch blog."
 
             });
 
@@ -453,9 +435,9 @@ app.get(
 );
 
 
-// ==============================
+// =================================
 // START SERVER
-// ==============================
+// =================================
 
 app.listen(
     PORT,
